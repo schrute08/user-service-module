@@ -9,7 +9,7 @@ import (
     pb "user-service-module/proto/user/userpb"
 )
 
-func main() {
+func InitServer() {
     lis, err := net.Listen("tcp", ":33001")
     if err != nil {
         log.Fatalf("failed to listen: %v", err)
