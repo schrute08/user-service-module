@@ -3,15 +3,15 @@ package server
 import (
 	"context"
 	"errors"
-	"strings"
+	"net/http"
+    "strings"
+
 	pb "user-service-module/proto/user/userpb"
-    "sync"
 )
 
 type UserServer struct {
     pb.UnimplementedUserServiceServer
     users []pb.User
-    mu sync.Mutex
 }
 
 func NewUserServer() *UserServer {
@@ -28,19 +28,23 @@ func NewUserServer() *UserServer {
 }
 
 func (s *UserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-    s.mu.Lock()
-    defer s.mu.Unlock()
+
     for _, user := range s.users {
         if user.Id == req.Id {
-            return &pb.GetUserResponse{User: &user}, nil
+            return &pb.GetUserResponse{
+                StatusCode: http.StatusOK,
+                User: &user,
+            }, nil
         }
     }
-    return nil, errors.New("user not found")
+
+    return &pb.GetUserResponse{
+        StatusCode: http.StatusNotFound,
+        User: &pb.User{},
+    }, errors.New("user not found")
 }
 
 func (s *UserServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
-    s.mu.Lock()
-    defer s.mu.Unlock()
 
     var users []*pb.User
 
@@ -51,12 +55,13 @@ func (s *UserServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*
             }
         }
     }
-    return &pb.ListUsersResponse{Users: users}, nil
+    return &pb.ListUsersResponse{
+        StatusCode: http.StatusOK,
+        Users: users,
+    }, nil
 }
 
 func (s *UserServer) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest) (*pb.SearchUsersResponse, error) {
-    s.mu.Lock()
-    defer s.mu.Unlock()
     
     var users []*pb.User
     
@@ -67,5 +72,8 @@ func (s *UserServer) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest
             users = append(users, &user)
         }
     }
-    return &pb.SearchUsersResponse{Users: users}, nil
+    return &pb.SearchUsersResponse{
+        StatusCode: http.StatusOK,
+        Users: users,
+    }, nil
 }
