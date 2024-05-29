@@ -14,7 +14,7 @@ message User {
     uint32 id = 1;
     string fname = 2;
     string city = 3;
-    uint64 phone = 4;
+    string phone = 4;
     float height = 5;
     bool married = 6;
 }
@@ -39,7 +39,7 @@ message ListUsersResponse {
 
 message SearchUsersRequest {
     string city = 1;
-    uint64 phone = 2;
+    string phone = 2;
     bool married = 3;
 }
 

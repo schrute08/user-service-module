@@ -21,9 +21,9 @@ func NewUserServer() *UserServer {
 	// Initialize the map with sample data
 	// Using a map for faster lookups
 	userMap := map[uint32]pb.User{
-		1: {Id: 1, Fname: "Steve", City: "LA", Phone: 1234567890, Height: 5.8, Married: true},
-		2: {Id: 2, Fname: "Bob", City: "NY", Phone: 9876543210, Height: 6.1, Married: false},
-		3: {Id: 3, Fname: "Alice", City: "LA", Phone: 1928374650, Height: 5.5, Married: true},
+		1: {Id: 1, Fname: "Steve", City: "LA", Phone: "9827329211", Height: 5.8, Married: true},
+		2: {Id: 2, Fname: "Bob", City: "NY", Phone: "9876543210", Height: 6.1, Married: false},
+		3: {Id: 3, Fname: "Alice", City: "LA", Phone: "9876545876", Height: 5.5, Married: true},
 	}
 
 	return &UserServer{
@@ -73,7 +73,7 @@ func (s *UserServer) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest
 
 	for _, user := range s.users {
 		if (req.City != "" && strings.EqualFold(user.City, req.City)) ||
-			(req.Phone != 0 && user.Phone == req.Phone) ||
+			(req.Phone != "" && user.Phone == req.Phone) ||
 			(user.Married == req.Married) {
 			users = append(users, &user)
 		}
