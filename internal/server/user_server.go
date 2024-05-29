@@ -101,6 +101,14 @@ func (s *UserServer) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest
 			users = append(users, &user)
 		}
 	}
+
+    if len(users) == 0 {
+        return &pb.SearchUsersResponse{
+            StatusCode: http.StatusNotFound,
+            Users:      users,
+        }, fmt.Errorf("%w", errors.ErrIDNotFound)
+    }
+    
 	return &pb.SearchUsersResponse{
 		StatusCode: http.StatusOK,
 		Users:      users,
