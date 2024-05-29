@@ -2,12 +2,13 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"sync"
 
+	"user-service-module/internal/errors"
+	"user-service-module/internal/utils"
 	pb "user-service-module/proto/user/userpb"
 )
 
@@ -35,6 +36,12 @@ func (s *UserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.G
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if !utils.IsIDValid(req.Id) {
+		return &pb.GetUserResponse{
+			StatusCode: http.StatusBadRequest,
+			User:       &pb.User{},
+		}, fmt.Errorf("%w: %d", errors.ErrInvalidID, req.Id)
+	}
 	if user, found := s.users[req.Id]; found {
 		return &pb.GetUserResponse{
 			StatusCode: http.StatusOK,
@@ -45,7 +52,7 @@ func (s *UserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.G
 	return &pb.GetUserResponse{
 		StatusCode: http.StatusNotFound,
 		User:       &pb.User{},
-	}, errors.New(fmt.Sprintf("user %d not found", req.Id))
+	}, fmt.Errorf("%w: %d", errors.ErrIDNotFound, req.Id)
 }
 
 func (s *UserServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
@@ -54,11 +61,20 @@ func (s *UserServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*
 
 	var users []*pb.User
 
+	invalidIDs := utils.GetInvalidIDs(req.Ids)
+	if len(invalidIDs) > 0 {
+		return &pb.ListUsersResponse{
+			StatusCode: http.StatusBadRequest,
+			Users:      users,
+		}, fmt.Errorf("%w: %v", errors.ErrInvalidID, invalidIDs)
+	}
+
 	for _, id := range req.Ids {
-        if user, found := s.users[id]; found {
-            users = append(users, &user)
-        }
-    }
+		if user, found := s.users[id]; found {
+			users = append(users, &user)
+		}
+	}
+
 	return &pb.ListUsersResponse{
 		StatusCode: http.StatusOK,
 		Users:      users,
@@ -70,6 +86,13 @@ func (s *UserServer) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest
 	defer s.mu.Unlock()
 
 	var users []*pb.User
+
+    if isReqInvalid, err := utils.ValidateSearchRequest(req.City, req.Phone); !isReqInvalid {
+        return &pb.SearchUsersResponse{
+            StatusCode: http.StatusBadRequest,
+            Users:      users,
+        }, err
+    }
 
 	for _, user := range s.users {
 		if (req.City != "" && strings.EqualFold(user.City, req.City)) ||
