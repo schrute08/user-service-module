@@ -52,7 +52,7 @@ func (s *UserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.G
 	return &pb.GetUserResponse{
 		StatusCode: http.StatusNotFound,
 		User:       &pb.User{},
-	}, fmt.Errorf("%w: %d", errors.ErrIDNotFound, req.Id)
+	}, fmt.Errorf("%w: %d", errors.ErrUserNotFound, req.Id)
 }
 
 func (s *UserServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
@@ -106,9 +106,9 @@ func (s *UserServer) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest
         return &pb.SearchUsersResponse{
             StatusCode: http.StatusNotFound,
             Users:      users,
-        }, fmt.Errorf("%w", errors.ErrIDNotFound)
+        }, fmt.Errorf("%w", errors.ErrUserNotFound)
     }
-    
+
 	return &pb.SearchUsersResponse{
 		StatusCode: http.StatusOK,
 		Users:      users,
