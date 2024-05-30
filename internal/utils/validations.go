@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"user-service-module/internal/errors"
 )
 
@@ -20,7 +21,7 @@ func GetInvalidIDs(ids []uint32) []uint32 {
 	return invalidIDs
 }
 
-func IsValidPhone(phone string) bool {
+func isValidPhone(phone string) bool {
 	phoneRegex := `^[1-9]\d{9}$`
 	return regexp.MustCompile(phoneRegex).MatchString(phone)
 }
@@ -31,16 +32,22 @@ func isCityValid(city string) bool {
 }
 
 func ValidateSearchRequest(city, phone string) (bool, error) {
-	invalidFields := []string{}
-	if !isCityValid(city) {
+	if city == "" && phone == "" {
+		return false, fmt.Errorf("%w: %v", errors.ErrInvalidFields, "either city or phone must be provided")
+	}
+
+	var invalidFields []string
+	if city != "" && !isCityValid(city) {
 		invalidFields = append(invalidFields, "city")
 	}
-	if !IsValidPhone(phone) {
+	if phone != "" && !isValidPhone(phone) {
 		invalidFields = append(invalidFields, "phone")
 	}
-	
+
 	if len(invalidFields) > 0 {
-		return false, fmt.Errorf("%w: %v", errors.ErrInvalidFields, invalidFields)
+		// Join the invalid fields into a single string
+		invalidFieldsStr := strings.Join(invalidFields, ", ")
+		return false, fmt.Errorf("%w: %v", errors.ErrInvalidFields, invalidFieldsStr)
 	}
 	return true, nil	
 }
