@@ -4,6 +4,12 @@ package proto;
 
 option go_package = "./userpb";
 
+enum MaritalStatus {
+    UNKNOWN = 0;
+    MARRIED = 1;
+    SINGLE = 2;
+}
+
 service UserService {
     rpc GetUser (GetUserRequest) returns (GetUserResponse);
     rpc ListUsers (ListUsersRequest) returns (ListUsersResponse);
@@ -16,8 +22,9 @@ message User {
     string city = 3;
     string phone = 4;
     float height = 5;
-    bool married = 6;
+    MaritalStatus isMarried = 6;
 }
+
 
 message GetUserRequest {
     uint32 id = 1;
@@ -40,7 +47,7 @@ message ListUsersResponse {
 message SearchUsersRequest {
     string city = 1;
     string phone = 2;
-    bool married = 3;
+    MaritalStatus isMarried = 3;
 }
 
 message SearchUsersResponse {
