@@ -1,11 +1,11 @@
-package cmd
+package main
 
 import (
 	"context"
 	"fmt"
 	"log"
 	"time"
-
+	"sync"
 	pb "user-service-module/proto/user/userpb"
 
 	"google.golang.org/grpc"
@@ -16,7 +16,7 @@ func main() {
 
 	// use grpc.Dial to connect to the running gRPC server
 	// use grpc.WithBlock() to block until the connection is established
-	conn, err := grpc.Dial("localhost:8080", grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial("localhost:33001", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("Failed to dial: %v", err)
 		return
@@ -27,20 +27,26 @@ func main() {
 	// use the NewGreetingServiceClient method of the generated in the .pb.go file
 	// to create a new GreetingServiceClient object
 	// this object can be used to call methods implemented in the grpc server
-
+	wg := sync.WaitGroup{}
 	client := pb.NewUserServiceClient(conn)
 
 	// Call GetUser
-	getUser(client, 1)
+	wg.Add(1)
+	go getUser(client, 1, &wg)
 
 	// Call ListUsers
-	listUsers(client, []uint32{1, 2, 3})
+	wg.Add(1)
+	go listUsers(client, []uint32{1, 2, 3}, &wg)
 
 	// Call SearchUsers
-	searchUsers(client, "LA", "", pb.MaritalStatus_MARRIED)
+	wg.Add(1)
+	go searchUsers(client, "LA", "", pb.MaritalStatus_MARRIED, &wg)
+
+	wg.Wait()
 }
 
-func getUser(client pb.UserServiceClient, id uint32) {
+func getUser(client pb.UserServiceClient, id uint32, wg *sync.WaitGroup) {
+	defer wg.Done()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
@@ -52,7 +58,8 @@ func getUser(client pb.UserServiceClient, id uint32) {
 	log.Printf("GetUser Response: %v", res)
 }
 
-func listUsers(client pb.UserServiceClient, ids []uint32) {
+func listUsers(client pb.UserServiceClient, ids []uint32, wg *sync.WaitGroup) {
+	defer wg.Done()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
@@ -64,7 +71,8 @@ func listUsers(client pb.UserServiceClient, ids []uint32) {
 	log.Printf("ListUsers Response: %v", res)
 }
 
-func searchUsers(client pb.UserServiceClient, city, phone string, isMarried pb.MaritalStatus) {
+func searchUsers(client pb.UserServiceClient, city, phone string, isMarried pb.MaritalStatus, wg *sync.WaitGroup) {
+	defer wg.Done()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 

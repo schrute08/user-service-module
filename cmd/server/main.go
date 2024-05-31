@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
     "user-service-module/internal/server"
@@ -9,7 +9,7 @@ import (
     pb "user-service-module/proto/user/userpb"
 )
 
-func InitServer() {
+func main() {
     lis, err := net.Listen("tcp", ":33001")
     if err != nil {
         log.Fatalf("failed to listen: %v", err)
