@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 	"user-service-module/internal/errors"
+	pb "user-service-module/proto/user/userpb"
 )
 
 func TestIsIDValid(t *testing.T) {
@@ -92,70 +93,135 @@ func TestValidateSearchRequest(t *testing.T) {
 		name        string
 		city        string
 		phone       string
+		isMarried   pb.MaritalStatus
 		isValid     bool
 		errContains string
 	}{
 		{
-			name: "should validate when both city and phone are valid", 
-			city: "New York", 
-			phone: "1234567890", 
-			isValid: true, 
+			name:        "should validate when all fields are provided",
+			city:        "New York",
+			phone:       "1234567890",
+			isMarried:   pb.MaritalStatus_MARRIED,
+			isValid:     true,
+			errContains: "",
+		},		
+		{
+			name:        "should validate when both city and phone are valid, marital status is not provided",
+			city:        "New York",
+			phone:       "1234567890",
+			isMarried:   pb.MaritalStatus_UNKNOWN,
+			isValid:     true,
 			errContains: "",
 		},
 		{
-			name: "should validate when both city and phone are valid 2", 
-			city: "Los Angeles", 
-			phone: "9876543210", 
-			isValid: true, 
+			name:        "should validate when city is valid, phone and marital status are not provided",
+			city:        "New York",
+			phone:       "",
+			isMarried:   pb.MaritalStatus_UNKNOWN,
+			isValid:     true,
 			errContains: "",
 		},
 		{
-			name: "should validate when city is empty and phone is valid", 
-			city: "", 
-			phone: "1234567890", 
-			isValid: true, 
+			name:        "should validate when phone is valid, city and marital status are not provided",
+			city:        "",
+			phone:       "1234567890",
+			isMarried:   pb.MaritalStatus_UNKNOWN,
+			isValid:     true,
 			errContains: "",
 		},
 		{
-			name: "should validate when city is valid and phone is empty",
-			city: "New York",
-			phone: "",
-			isValid: true,
+			name:        "should validate when marital status is provided, city and phone are not provided",
+			city:        "",
+			phone:       "",
+			isMarried:   pb.MaritalStatus_MARRIED,
+			isValid:     true,
 			errContains: "",
 		},
 		{
-			name: "should invalidate when city is invalid and phone is valid", 
-			city: "InvalidCity1", 
-			phone: "1234567890", 
-			isValid: false, 
+			name:        "should validate when marital status is provided, city and phone are not provided",
+			city:        "",
+			phone:       "",
+			isMarried:   pb.MaritalStatus_SINGLE,
+			isValid:     true,
+			errContains: "",
+		},
+		{
+			name:        "should not validate when city is invalid, phone and marital status are not provided",
+			city:        "123City",
+			phone:       "",
+			isMarried:   pb.MaritalStatus_UNKNOWN,
+			isValid:     false,
 			errContains: "city",
 		},
 		{
-			name: "should invalidate when both city and phone are invalid", 
-			city: "InvalidCity1", 
-			phone: "0123456789", 
-			isValid: false, 
+			name:        "should not validate when phone is invalid, city and marital status are not provided",
+			city:        "",
+			phone:       "123456789",
+			isMarried:   pb.MaritalStatus_UNKNOWN,
+			isValid:     false,
+			errContains: "phone",
+		},
+		{
+			name:        "should not validate when city and phone are invalid, marital status is not provided",
+			city:        "123City",
+			phone:       "123456789",
+			isMarried:   pb.MaritalStatus_UNKNOWN,
+			isValid:     false,
 			errContains: "city, phone",
 		},
 		{
-			name: "should invalidate when both city and phone are empty", 
-			city: "", 
-			phone: "", 
-			isValid: false, 
-			errContains: "either city or phone must be provided",
+			name:        "should not validate when city and phone are invalid, marital status is provided",
+			city:        "123City",
+			phone:       "123456789",
+			isMarried:   pb.MaritalStatus_MARRIED,
+			isValid:     false,
+			errContains: "city, phone",
 		},
 		{
-			name: "should invalidate when city is invalid and phone is empty", 
-			city: "InvalidCity1", 
-			phone: "", 
-			isValid: false, 
+			name:        "should not validate when city is invalid, phone is valid, marital status is not provided",
+			city:        "123City",
+			phone:       "1234567890",
+			isMarried:   pb.MaritalStatus_UNKNOWN,
+			isValid:     false,
 			errContains: "city",
 		},
-	}	
+		{
+			name:        "should not validate when city is valid, phone is invalid, marital status is not provided",
+			city:        "New York",
+			phone:       "123456789",
+			isMarried:   pb.MaritalStatus_UNKNOWN,
+			isValid:     false,
+			errContains: "phone",
+		},
+		{
+			name:        "should not validate when city is valid, phone is invalid, marital status is provided",	
+			city:        "New York",
+			phone:       "123456789",
+			isMarried:   pb.MaritalStatus_SINGLE,
+			isValid:     false,
+			errContains: "phone",
+		},
+		{
+			name:        "should not validate when city is invalid, phone is valid, marital status is provided",
+			city:        "123City",
+			phone:       "1234567890",
+			isMarried:   pb.MaritalStatus_MARRIED,
+			isValid:     false,
+			errContains: "city",
+		},
+		{
+			name:       "should not validate when city, phone and marital status are not provided",
+			city:       "",
+			phone:      "",
+			isMarried:  pb.MaritalStatus_UNKNOWN,
+			isValid:    false,
+			errContains: "either city, phone or marital status must be provided",
+		},
+	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			valid, err := ValidateSearchRequest(test.city, test.phone)
+			valid, err := ValidateSearchRequest(test.city, test.phone, test.isMarried)
 			if valid != test.isValid {
 				t.Errorf("ValidateSearchRequest(%q, %q) valid = %v; want %v", test.city, test.phone, valid, test.isValid)
 			}

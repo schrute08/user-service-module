@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"user-service-module/internal/errors"
+	pb "user-service-module/proto/user/userpb"
 )
 
 func IsIDValid(id uint32) bool {
@@ -31,9 +32,18 @@ func isCityValid(city string) bool {
 	return regexp.MustCompile(cityRegex).MatchString(city)
 }
 
-func ValidateSearchRequest(city, phone string) (bool, error) {
+func ValidateSearchRequest(city, phone string, isMarried pb.MaritalStatus) (bool, error) {
 	if city == "" && phone == "" {
-		return false, fmt.Errorf("%w: %v", errors.ErrInvalidFields, "either city or phone must be provided")
+		if isMarried == pb.MaritalStatus_UNKNOWN{
+			return false, fmt.Errorf(
+				"%w: %v", 
+				errors.ErrInvalidFields, 
+				"either city, phone or marital status must be provided",
+			)
+		} else {
+			return true, nil
+		}
+		
 	}
 
 	var invalidFields []string
@@ -49,5 +59,5 @@ func ValidateSearchRequest(city, phone string) (bool, error) {
 		invalidFieldsStr := strings.Join(invalidFields, ", ")
 		return false, fmt.Errorf("%w: %v", errors.ErrInvalidFields, invalidFieldsStr)
 	}
-	return true, nil	
+	return true, nil
 }

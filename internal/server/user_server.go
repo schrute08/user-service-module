@@ -14,14 +14,14 @@ import (
 
 type UserServer struct {
 	pb.UnimplementedUserServiceServer
-	users map[uint32]pb.User
+	users map[uint32]*pb.User
 	mu    sync.Mutex
 }
 
 func NewUserServer() *UserServer {
 	// Initialize the map with sample data
 	// Using a map for faster lookups
-	userMap := map[uint32]pb.User{
+	userMap := map[uint32]*pb.User{
 		1: {Id: 1, Fname: "Steve", City: "LA", Phone: "9827329211", Height: 5.8, IsMarried: pb.MaritalStatus_MARRIED},
 		2: {Id: 2, Fname: "Bob", City: "NY", Phone: "9876543210", Height: 6.1, IsMarried: pb.MaritalStatus_SINGLE},
 		3: {Id: 3, Fname: "Alice", City: "LA", Phone: "9876545876", Height: 5.5, IsMarried: pb.MaritalStatus_MARRIED},
@@ -45,7 +45,7 @@ func (s *UserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.G
 	if user, found := s.users[req.Id]; found {
 		return &pb.GetUserResponse{
 			StatusCode: http.StatusOK,
-			User:       &user,
+			User:       user,
 		}, nil
 	}
 
@@ -59,7 +59,7 @@ func (s *UserServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var users []*pb.User = []*pb.User{}
+	users := []*pb.User{}
 	invalidIDs := utils.GetInvalidIDs(req.Ids)
 	if len(invalidIDs) > 0 {
 		return &pb.ListUsersResponse{
@@ -71,7 +71,7 @@ func (s *UserServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*
 	usersNotFound := []uint32{}
 	for _, id := range req.Ids {
 		if user, found := s.users[id]; found {
-			users = append(users, &user)
+			users = append(users, user)
 		} else {
 			usersNotFound = append(usersNotFound, id)
 		}
@@ -94,9 +94,8 @@ func (s *UserServer) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var users []*pb.User
-
-    if isReqInvalid, err := utils.ValidateSearchRequest(req.City, req.Phone); !isReqInvalid {
+	users := []*pb.User{}
+    if isReqInvalid, err := utils.ValidateSearchRequest(req.City, req.Phone, req.IsMarried); !isReqInvalid {
         return &pb.SearchUsersResponse{
             StatusCode: http.StatusBadRequest,
             Users:      users,
@@ -104,10 +103,10 @@ func (s *UserServer) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest
     }
 
 	for _, user := range s.users {
-		if (req.City != "" && strings.EqualFold(user.City, req.City)) ||
-			(req.Phone != "" && user.Phone == req.Phone) ||
+		if (strings.EqualFold(user.City, req.City)) ||
+			(user.Phone == req.Phone) ||
 			(user.IsMarried == req.IsMarried) {
-			users = append(users, &user)
+				users = append(users, user)
 		}
 	}
 
