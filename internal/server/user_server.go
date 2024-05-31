@@ -59,8 +59,7 @@ func (s *UserServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var users []*pb.User
-
+	var users []*pb.User = []*pb.User{}
 	invalidIDs := utils.GetInvalidIDs(req.Ids)
 	if len(invalidIDs) > 0 {
 		return &pb.ListUsersResponse{
@@ -69,10 +68,20 @@ func (s *UserServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*
 		}, fmt.Errorf("%w: %v", errors.ErrInvalidID, invalidIDs)
 	}
 
+	usersNotFound := []uint32{}
 	for _, id := range req.Ids {
 		if user, found := s.users[id]; found {
 			users = append(users, &user)
+		} else {
+			usersNotFound = append(usersNotFound, id)
 		}
+	}
+
+	if len(usersNotFound) > 0 {
+		return &pb.ListUsersResponse{
+			StatusCode: http.StatusNotFound,
+			Users:      []*pb.User{},
+		}, fmt.Errorf("%w: %v", errors.ErrUserNotFound, usersNotFound)
 	}
 
 	return &pb.ListUsersResponse{

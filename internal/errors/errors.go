@@ -6,6 +6,6 @@ import(
 
 var (
 	ErrInvalidID = errors.New("error: invalid ID(s)")
-	ErrUserNotFound = errors.New("error: user not found")
+	ErrUserNotFound = errors.New("error: user(s) not found")
 	ErrInvalidFields = errors.New("error: invalid field(s)")
 )
